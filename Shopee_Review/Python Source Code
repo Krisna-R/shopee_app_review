@@ -1,0 +1,48 @@
+import pandas as pd
+import re
+
+file_path = 'Shopee Review.xlsx'
+
+try:
+    df = pd.read_excel(file_path, engine='openpyxl')
+except ValueError:
+    print("Peringatan: Format Excel murni tidak dikenali. Sistem membaca file sebagai CSV...")
+    df = pd.read_csv(file_path)
+
+categories_keywords = {
+    'Pengiriman & Logistik': r'kurir|paket|lama|ekspedisi|pengiriman|resi|lacak|nyasar|belum sampai|hilang|j&t|spx|shopee express|jne|ongkir|lelet',
+    'Performa Aplikasi': r'loading|lemot|ngelag|\blag\b|error|bug|upgrade|update|force close|berat|jaringan|sinyal|keluar sendiri|macet|\bapk\b|aplikasi',
+    'Promosi & Voucher': r'voucher|vocher|gratis ongkir|promo|diskon|event|flash sale|mahal|koin|minimal belanja|min belanja|12\.12|ongkos kirim|klaim',
+    'Pembayaran': r'spaylater|paylater|shopeepay|kredit|transfer|top up|saldo|refund|pengembalian dana|gagal bayar|tagihan|bunga|denda|rekening',
+    'Pelayanan CS/Penjual': r'\bcs\b|customer service|admin|bot|penjual|seller|toko|respon|penipuan|komplain|retur|kembalikan barang|kecewa pelayanan',
+    'Pujian Umum': r'bagus|mantap|terbaik|good|membantu|suka|memuaskan|keren|oke|lanjutkan|bermanfaat',
+    'Keluhan Umum': r'kecewa|hapus|uninstall|uninstal|buruk|jelek|nyesel|pindah|aplikasi sebelah|sampah'
+}
+
+def categorize_text(text):
+    if pd.isna(text):
+        return 'Lainnya'
+
+    text_lower = str(text).lower()
+
+    matched_categories = []
+
+    for category, pattern in categories_keywords.items():
+        if re.search(pattern, text_lower):
+            matched_categories.append(category)
+
+    if not matched_categories:
+        return 'Lainnya'
+
+    return ','.join(matched_categories)
+
+df['Kategori'] = df['content'].apply(categorize_text)
+
+print("Preview Hasil Kategorisasi:")
+print(df[['content', 'Kategori']].head(10))
+
+output_filename = 'Shopee_Review_Categorized_For_Looker.xlsx'
+df.to_excel(output_filename, index=False)
+print(f"\nProses selesai! Mengunduh file '{output_filename}'...")
+
+files.download(output_filename)
